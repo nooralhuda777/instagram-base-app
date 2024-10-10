@@ -1,4 +1,4 @@
-# Rocket Academy Coding Bootcamp: Instagram Bootcamp
+# Instagram Bootcamp
 
 ## Available Scripts
 
