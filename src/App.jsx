@@ -2,55 +2,75 @@ import "./App.css";
 import { onChildAdded, push, ref, set } from "firebase/database";
 import { database } from "./firebase";
 import { useState, useEffect } from "react";
-
-// Save the Firebase message folder name as a constant to avoid bugs due to misspelling
-const DB_MESSAGES_KEY = "messages";
+///
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import AuthForm from "./components/AuthForm";
+import Composer from "./components/Composer";
+import Newsfeed from "./components/NewsFeed";
+import Chat from "./components/Chat";
+import Dashboard from "./components/Dashboard";
 
 function App() {
-  const [messages, setMessages] = useState([]);
-  ///
-  const [message, setMessage] = useState("");
-  ///
+  const [loggedInUser, setLoggedInUser] = useState(null);
+
+  const [shouldRenderAuthForm, setShouldRenderAuthForm] = useState(false);
+
   useEffect(() => {
-    const messagesRef = ref(database, DB_MESSAGES_KEY);
-    // onChildAdded will return data for every child at the reference and every subsequent new child
-    onChildAdded(messagesRef, (data) => {
-      // Add the subsequent child to local component state, initialising a new array to trigger re-render
-      setMessages((prevState) =>
-        // Store message key so we can use it as a key in our list items when rendering messages
-        [...prevState, { key: data.key, val: data.val() }]
-      );
+    onAuthStateChanged(auth, (user) => {
+      setLoggedInUser(user);
     });
   }, []);
-  ///
-  const handleChange = (e) => {
-    setMessage(e.target.value);
-  };
-  ///
-  const writeData = () => {
-    const messageListRef = ref(database, DB_MESSAGES_KEY);
-    const newMessageRef = push(messageListRef);
-    set(newMessageRef, message);
-    setMessage("");
+
+  const toggleAuthForm = () => {
+    setShouldRenderAuthForm(!shouldRenderAuthForm);
   };
 
-  // Convert messages in state to message JSX elements to render
-  let messageListItems = messages.map((message) => (
-    <li key={message.key}>{message.val}</li>
-  ));
-
-  return (
-    <>
-      <h1>Instagram Bootcamp</h1>
-      <div className="card">
-        {/* TODO: Add input field and add text input as messages in Firebase */}
-        <label>Message</label>
-        <input type="text" value={message} onChange={handleChange} />
-        <button onClick={writeData}>Send</button>
-        <ol>{messageListItems}</ol>
+  if (loggedInUser) {
+    console.log("Logged in user:", loggedInUser);
+    return (
+      <div>
+        <h1>Instagram Bootcamp</h1>
+        <Dashboard />
       </div>
-    </>
-  );
+    );
+  } else {
+    return (
+      <div>
+        <h1>Instagram Bootcamp</h1>
+        {shouldRenderAuthForm ? (
+          <AuthForm toggleAuthForm={toggleAuthForm} />
+        ) : (
+          <button onClick={toggleAuthForm}>Create Account or Sign In</button>
+        )}
+      </div>
+    );
+  }
 }
+//    return (
+//      <>
+//        <h1>Instagram Bootcamp</h1>
+//        <div>
+//          {shouldRenderAuthForm ? (
+//            <AuthForm toggleAuthForm={toggleAuthForm} />
+//          ) : (
+//            <div>
+//              {loggedInUser ? (
+//                <>
+//                  <Newsfeed />
+//                  <Composer />
+//                </>
+//              ) : (
+//                <button onClick={toggleAuthForm}>
+//                  Create Account or Sign In
+//                </button>
+//              )}
+//            </div>
+//          )}
+//        </div>
+//      </>
+//    );
+//  }
 
 export default App;
